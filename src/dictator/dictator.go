@@ -1,23 +1,22 @@
 package main
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"strconv"
 	"fmt"
 	"net/http"
-)
+	"strconv"
 
+	log "github.com/Sirupsen/logrus"
+)
 
 func HTTPDictatorStatus(w http.ResponseWriter, r *http.Request, ze *Elector) {
 	if ze.Paused {
 		fmt.Fprintf(w, "Dictator Status = Disable/Paused\n")
 		log.Info("Dictator Status = Disable/Paused")
-	}else{
+	} else {
 		fmt.Fprintf(w, "Dictator Status = Enable\n")
 		log.Info("Dictator Status = Enable")
-	}	
+	}
 }
-
 
 func HTTPEnable(w http.ResponseWriter, r *http.Request, ze *Elector) {
 	if ze.Paused {
@@ -25,7 +24,7 @@ func HTTPEnable(w http.ResponseWriter, r *http.Request, ze *Elector) {
 		ze.Paused = false
 		log.Info("Unpause Dictator")
 		fmt.Fprintf(w, "Dictator Status = Enable\n")
-	}else{
+	} else {
 		log.Warn("Dictator is already enabled")
 	}
 }
@@ -36,12 +35,12 @@ func HTTPDisable(w http.ResponseWriter, r *http.Request, ze *Elector) {
 		ze.Paused = true
 		log.Info("Pause Dictator")
 		fmt.Fprintf(w, "Dictator Status = Disable/Paused\n")
-	}else{
+	} else {
 		log.Warn("Dictator is already paused")
 	}
 }
 
-func Run(conf DictatorConfiguration, stop <-chan bool, finished chan<-bool) {
+func Run(conf DictatorConfiguration, stop <-chan bool, finished chan<- bool) {
 	var re Redis // Create a Redis Node
 	err := re.Initialize(conf.Node.Name, conf.Node.Host, conf.Node.Port, conf.Node.LoadingTimeout)
 	if err != nil {
@@ -57,31 +56,31 @@ func Run(conf DictatorConfiguration, stop <-chan bool, finished chan<-bool) {
 	}
 
 	// Run Elector
-    go ze.Run()
+	go ze.Run()
 
-    // http signals management
-    http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-          HTTPDictatorStatus(w, r, &ze)
-    })
-    http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-          HTTPDictatorStatus(w, r, &ze)
-    })
-    http.HandleFunc("/enable", func(w http.ResponseWriter, r *http.Request) {
-          HTTPEnable(w, r, &ze)
-    })
-    http.HandleFunc("/disable", func(w http.ResponseWriter, r *http.Request) {
-          HTTPDisable(w, r, &ze)
-    })
-	go http.ListenAndServe(":" + strconv.Itoa(conf.HttpPort), nil)
+	// http signals management
+	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+		HTTPDictatorStatus(w, r, &ze)
+	})
+	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		HTTPDictatorStatus(w, r, &ze)
+	})
+	http.HandleFunc("/enable", func(w http.ResponseWriter, r *http.Request) {
+		HTTPEnable(w, r, &ze)
+	})
+	http.HandleFunc("/disable", func(w http.ResponseWriter, r *http.Request) {
+		HTTPDisable(w, r, &ze)
+	})
+	go http.ListenAndServe(":"+strconv.Itoa(conf.HttpPort), nil)
 
 	// Wait for the stop signal
-	Loop:
+Loop:
 	for {
 		select {
 		case hasToStop := <-stop:
 			if hasToStop {
 				log.Debug("Close Signal Received!")
-			}else {
+			} else {
 				log.Debug("Close Signal Received (but a strange false one)")
 			}
 			break Loop

@@ -1,24 +1,25 @@
 package main
 
 import (
-	log "github.com/Sirupsen/logrus"
 	"encoding/json"
 	"io/ioutil"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type NodeConfiguration struct {
-	Name string `json:"name"`
-	Host string `json:"host"`
-	Port int `json:"port"`
-	LoadingTimeout int `json:"loading_timeout"`
+	Name           string `json:"name"`
+	Host           string `json:"host"`
+	Port           int    `json:"port"`
+	LoadingTimeout int    `json:"loading_timeout"`
 }
 
 type DictatorConfiguration struct {
-	ServiceName string `json:"svc_name"`
-	LogLevel    string `json:"log_level"`
-	ZKHosts     []string `json:"zk_hosts"`
+	ServiceName string            `json:"svc_name"`
+	LogLevel    string            `json:"log_level"`
+	ZKHosts     []string          `json:"zk_hosts",omitempty`
 	Node        NodeConfiguration `json:"node"`
-	HttpPort 	int `json:"http_port"`
+	HttpPort    int               `json:"http_port"`
 }
 
 func NewDictatorConfiguration() DictatorConfiguration {
@@ -26,12 +27,12 @@ func NewDictatorConfiguration() DictatorConfiguration {
 
 	return DictatorConfiguration{
 		LogLevel: "INFO",
-		ZKHosts: []string{"localhost:2181"},
+		ZKHosts:  []string{"localhost:2181"},
 		HttpPort: 8000,
 		Node: NodeConfiguration{
-			Name: "local",
-			Host: "localhost",
-			Port: 6379,
+			Name:           "local",
+			Host:           "localhost",
+			Port:           6379,
 			LoadingTimeout: 30,
 		},
 	}
@@ -52,7 +53,6 @@ func (d *DictatorConfiguration) ReadConfigurationFile(configFilePath string) err
 	if err != nil {
 		return err
 	}
-
 
 	return nil
 }

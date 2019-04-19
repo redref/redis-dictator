@@ -1,23 +1,24 @@
 package main
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"gopkg.in/redis.v3"
-	"strconv"
 	"errors"
+	"strconv"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"gopkg.in/redis.v5"
 )
 
 type Redis struct {
-	Name string
-	Host string
-	Port int
-	Role string
+	Name           string
+	Host           string
+	Port           int
+	Role           string
 	LoadingTimeout int
-	Conn *redis.Client
+	Conn           *redis.Client
 }
 
-func(rn *Redis) Initialize(Name string, Host string, Port int, LoadingTimeout int) (error) {
+func (rn *Redis) Initialize(Name string, Host string, Port int, LoadingTimeout int) error {
 	rn.Name = Name
 	rn.Host = Host
 	rn.Port = Port
@@ -26,20 +27,20 @@ func(rn *Redis) Initialize(Name string, Host string, Port int, LoadingTimeout in
 	return nil
 }
 
-func (rn *Redis) Connect() (error){
+func (rn *Redis) Connect() error {
 	var err error
-    for i := 0; i < rn.LoadingTimeout; i++ {
+	for i := 0; i < rn.LoadingTimeout; i++ {
 		rn.Conn = redis.NewClient(&redis.Options{
-	        Addr:     rn.Host + ":" + strconv.Itoa(rn.Port),
-	        Password: "", // no password set
-	        DB:       0,  // use default DB
-	    })
+			Addr:     rn.Host + ":" + strconv.Itoa(rn.Port),
+			Password: "", // no password set
+			DB:       0,  // use default DB
+		})
 
-	    err = rn.Conn.Ping().Err()
-	    if err != nil {
+		err = rn.Conn.Ping().Err()
+		if err != nil {
 			log.WithError(err).Debug("Wait for Redis Server...")
 			time.Sleep(time.Second)
-		}else{
+		} else {
 			err = nil
 			break
 		}
@@ -47,31 +48,31 @@ func (rn *Redis) Connect() (error){
 	return err
 }
 
-func(rn *Redis) SlaveOf(host string, port string) (error) {
+func (rn *Redis) SlaveOf(host string, port string) error {
 	err := rn.Connect()
 	if err != nil {
-    	return errors.New("Can't connect to Redis.")
-    }
+		return errors.New("Can't connect to Redis.")
+	}
 
-    slaveOf := rn.Conn.SlaveOf(host, port)
-    if slaveOf.Val() != "OK"{
-    	err = slaveOf.Err()
-    }
+	slaveOf := rn.Conn.SlaveOf(host, port)
+	if slaveOf.Val() != "OK" {
+		err = slaveOf.Err()
+	}
 
-    err = rn.Conn.Close()
+	err = rn.Conn.Close()
 
-    return err
+	return err
 }
 
-func(rn *Redis) Is(n *Redis) (bool) {
+func (rn *Redis) Is(n *Redis) bool {
 	if rn.Host == n.Host && rn.Port == n.Port {
 		return true
-	}else{
+	} else {
 		return false
 	}
 }
 
-func(rn *Redis) SetRole(role string, master *Redis) (error) {
+func (rn *Redis) SetRole(role string, master *Redis) error {
 	switch role {
 	case "MASTER":
 		rn.Role = "MASTER"
@@ -90,7 +91,7 @@ func(rn *Redis) SetRole(role string, master *Redis) (error) {
 				return err
 			}
 			rn.Role = "SLAVE"
-		}else{
+		} else {
 			return errors.New("Master is empty!")
 		}
 	default:
@@ -98,4 +99,3 @@ func(rn *Redis) SetRole(role string, master *Redis) (error) {
 	}
 	return nil
 }
-

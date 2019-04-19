@@ -1,24 +1,25 @@
 package main
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"os"
 	"flag"
-	"time"
-	"os/signal"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
+	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
-	Version = "No Version Defined"
-	BuildTime = "1970-01-01 00:00:00 (UTC)"
-	GitRevision  = "No Git Rev Defined"
+	Version     = "No Version Defined"
+	BuildTime   = "1970-01-01 00:00:00 (UTC)"
+	GitRevision = "No Git Rev Defined"
 )
 
 // Manage OS Signal, only for shutdown purpose
 // When termination signal is received, we send a message to a chan
-func manageSignal(c <-chan os.Signal, stop chan <-bool) {
+func manageSignal(c <-chan os.Signal, stop chan<- bool) {
 	for {
 		select {
 		case _signal := <-c:
@@ -68,7 +69,7 @@ func printVersion() {
 	fmt.Println("Git Revision :", GitRevision)
 }
 
-func initConfiguration(configFilePath string) (DictatorConfiguration) {
+func initConfiguration(configFilePath string) DictatorConfiguration {
 	dictatorConfig := NewDictatorConfiguration()
 	err := dictatorConfig.ReadConfigurationFile(configFilePath)
 	if err != nil {
@@ -109,9 +110,9 @@ func main() {
 
 	log.Debug("Waiting for main process to Stop")
 	isFinished := <-finished
-	if (isFinished) {
+	if isFinished {
 		log.Debug("Main routine closed correctly")
-	}else {
+	} else {
 		log.Warn("Main routine closed incorrectly")
 	}
 	log.Info("Shutdown")
