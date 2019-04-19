@@ -1,0 +1,5 @@
+required = [
+    'github.com/Sirupsen/logrus',
+    'github.com/samuel/go-zookeeper/zk',
+    'gopkg.in/redis.v5',
+]
