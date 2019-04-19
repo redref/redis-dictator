@@ -15,11 +15,11 @@ type NodeConfiguration struct {
 }
 
 type DictatorConfiguration struct {
-	ServiceName string            `json:"svc_name"`
-	LogLevel    string            `json:"log_level"`
-	ZKHosts     []string          `json:"zk_hosts",omitempty`
-	Node        NodeConfiguration `json:"node"`
-	HttpPort    int               `json:"http_port"`
+	ServiceName   string            `json:"svc_name"`
+	LogLevel      string            `json:"log_level"`
+	Node          NodeConfiguration `json:"node"`
+	HttpPort      int               `json:"http_port"`
+	MasterService string            `json:"master_service"`
 }
 
 func NewDictatorConfiguration() DictatorConfiguration {
@@ -27,7 +27,6 @@ func NewDictatorConfiguration() DictatorConfiguration {
 
 	return DictatorConfiguration{
 		LogLevel: "INFO",
-		ZKHosts:  []string{"localhost:2181"},
 		HttpPort: 8000,
 		Node: NodeConfiguration{
 			Name:           "local",
@@ -35,6 +34,7 @@ func NewDictatorConfiguration() DictatorConfiguration {
 			Port:           6379,
 			LoadingTimeout: 30,
 		},
+		MasterService: "",
 	}
 }
 

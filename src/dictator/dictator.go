@@ -8,68 +8,46 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-func HTTPDictatorStatus(w http.ResponseWriter, r *http.Request, ze *Elector) {
-	if ze.Paused {
-		fmt.Fprintf(w, "Dictator Status = Disable/Paused\n")
-		log.Info("Dictator Status = Disable/Paused")
-	} else {
-		fmt.Fprintf(w, "Dictator Status = Enable\n")
-		log.Info("Dictator Status = Enable")
-	}
-}
-
-func HTTPEnable(w http.ResponseWriter, r *http.Request, ze *Elector) {
-	if ze.Paused {
-		go ze.Run()
-		ze.Paused = false
-		log.Info("Unpause Dictator")
-		fmt.Fprintf(w, "Dictator Status = Enable\n")
-	} else {
-		log.Warn("Dictator is already enabled")
-	}
-}
-
-func HTTPDisable(w http.ResponseWriter, r *http.Request, ze *Elector) {
-	if !ze.Paused {
-		ze.Destroy()
-		ze.Paused = true
-		log.Info("Pause Dictator")
-		fmt.Fprintf(w, "Dictator Status = Disable/Paused\n")
-	} else {
-		log.Warn("Dictator is already paused")
-	}
-}
-
 func Run(conf DictatorConfiguration, stop <-chan bool, finished chan<- bool) {
-	var re Redis // Create a Redis Node
-	err := re.Initialize(conf.Node.Name, conf.Node.Host, conf.Node.Port, conf.Node.LoadingTimeout)
+	var master Redis // Dummy master node
+	err := master.Initialize("", conf.MasterService, conf.Node.Port, conf.Node.LoadingTimeout)
 	if err != nil {
 		log.WithError(err).Warn("Fail to initialize Redis node")
 		finished <- true
 	}
 
-	var ze Elector // Create a ZK Elector
-	err = ze.Initialize(conf.ZKHosts, conf.ServiceName, &re)
+	var re Redis // Create a Redis Node
+	err = re.Initialize(conf.Node.Name, conf.Node.Host, conf.Node.Port, conf.Node.LoadingTimeout)
 	if err != nil {
-		log.WithError(err).Warn("Fail to initialize ZK Elector")
+		log.WithError(err).Warn("Fail to initialize Redis node")
 		finished <- true
 	}
 
-	// Run Elector
-	go ze.Run()
+	// Set default to slave
+	re.SetRole("SLAVE", &master)
 
 	// http signals management
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-		HTTPDictatorStatus(w, r, &ze)
+		fmt.Fprintf(w, re.Role)
+		log.Info("Call to node status", "Node Status", re.Role)
 	})
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		HTTPDictatorStatus(w, r, &ze)
+		err := re.Connect()
+		if err != nil {
+			fmt.Fprintf(w, "OK")
+			log.Info("Ping failed")
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Info("Ping success")
+		}
 	})
-	http.HandleFunc("/enable", func(w http.ResponseWriter, r *http.Request) {
-		HTTPEnable(w, r, &ze)
+	http.HandleFunc("/promote", func(w http.ResponseWriter, r *http.Request) {
+		re.SetRole("MASTER", nil)
+		log.Info("Node promoted", "Node Status", re.Role)
 	})
-	http.HandleFunc("/disable", func(w http.ResponseWriter, r *http.Request) {
-		HTTPDisable(w, r, &ze)
+	http.HandleFunc("/demote", func(w http.ResponseWriter, r *http.Request) {
+		re.SetRole("SLAVE", &master)
+		log.Info("Node demoted", "Node Status", re.Role)
 	})
 	go http.ListenAndServe(":"+strconv.Itoa(conf.HttpPort), nil)
 
@@ -86,8 +64,6 @@ Loop:
 			break Loop
 		}
 	}
-
-	ze.Destroy()
 
 	finished <- true
 }
