@@ -43,7 +43,10 @@ func Run(conf DictatorConfiguration, stop <-chan bool, finished chan<- bool) {
 		}
 	})
 	http.HandleFunc("/promote", func(w http.ResponseWriter, r *http.Request) {
-		re.SetRole("MASTER", nil)
+		err := re.SetRole("MASTER", nil)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		log.Info("Node promoted, new status: ", re.Role)
 	})
 	http.HandleFunc("/demote", func(w http.ResponseWriter, r *http.Request) {
