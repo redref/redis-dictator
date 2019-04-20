@@ -25,11 +25,12 @@ func Run(conf DictatorConfiguration, stop <-chan bool, finished chan<- bool) {
 
 	// Set default to slave
 	re.SetRole("SLAVE", &master)
+	log.Info("Node started, new status: ", re.Role, " of ", master.Host)
 
 	// http signals management
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, re.Role)
-		log.Info("Call to node status", "Node Status", re.Role)
+		log.Info("Call to node status, status was: ", re.Role)
 	})
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		err := re.Connect()
@@ -43,11 +44,11 @@ func Run(conf DictatorConfiguration, stop <-chan bool, finished chan<- bool) {
 	})
 	http.HandleFunc("/promote", func(w http.ResponseWriter, r *http.Request) {
 		re.SetRole("MASTER", nil)
-		log.Info("Node promoted", "Node Status", re.Role)
+		log.Info("Node promoted, new status: ", re.Role)
 	})
 	http.HandleFunc("/demote", func(w http.ResponseWriter, r *http.Request) {
 		re.SetRole("SLAVE", &master)
-		log.Info("Node demoted", "Node Status", re.Role)
+		log.Info("Node demoted, new status: ", re.Role, " of ", master.Host)
 	})
 	go http.ListenAndServe(":"+strconv.Itoa(conf.HttpPort), nil)
 

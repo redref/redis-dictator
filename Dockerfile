@@ -10,4 +10,4 @@ FROM alpine
 
 COPY --from=builder /dictator /
 
-CMD ["/dictator", "/etc/dictator/dictator.json"]
+CMD ["/dictator", "--config", "/etc/dictator/dictator.json"]
