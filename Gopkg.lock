@@ -19,41 +19,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7fc2f428767a2521abc63f1a663d981f61610524275d6c0ea645defadd4e916f"
-  name = "github.com/samuel/go-zookeeper"
-  packages = ["zk"]
-  pruneopts = ""
-  revision = "c4fab1ac1bec58281ad0667dc3f0907a9476ac47"
-
-[[projects]]
-  branch = "master"
   digest = "1:8be0627b49a5b2fcb1cf83e1e348b935371a9c55c73085eebfceee4ef49b52df"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = ""
   revision = "e8e3143a4f4a00f1fafef0dd82ba78223281b01b"
-
-[[projects]]
-  branch = "v1"
-  digest = "1:105ec809d993ab248d801e6daef5634115218dec8f77bcbc55f07a97d655ddad"
-  name = "gopkg.in/bsm/ratelimit.v1"
-  packages = ["."]
-  pruneopts = ""
-  revision = "db14e161995a5177acef654cb0dd785e8ee8bc22"
-
-[[projects]]
-  digest = "1:6651284988a9d46d55a68413bdf9850558ee440642449d269f16dbc32a2d3b88"
-  name = "gopkg.in/redis.v3"
-  packages = [
-    ".",
-    "internal",
-    "internal/consistenthash",
-    "internal/hashtag",
-    "internal/pool",
-  ]
-  pruneopts = ""
-  revision = "b5e368500d0a508ef8f16e9c2d4025a8a46bcc29"
-  version = "v3.6.4"
 
 [[projects]]
   digest = "1:bb926af439b58c00c9cb8b6ca590c13a864e6f29284d5e57be0ce55f250edf40"
@@ -75,8 +45,6 @@
   analyzer-version = 1
   input-imports = [
     "github.com/Sirupsen/logrus",
-    "github.com/samuel/go-zookeeper/zk",
-    "gopkg.in/redis.v3",
     "gopkg.in/redis.v5",
   ]
   solver-name = "gps-cdcl"
