@@ -40,7 +40,7 @@ spec:
         command:
         - sh
         - "-c"
-        - |
+        - |-
           {{ range $key, $value := .Values.sysctl.params -}}
           sysctl {{ $key }}={{ $value }}
           {{ end }}

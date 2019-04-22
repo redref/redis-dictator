@@ -53,8 +53,8 @@ persistence:
 config:
   maxmemory: 64MB
   tcp-backlog: 511
-  loglevel: info
-  always-show-logo: no
+  loglevel: "verbose"
+  always-show-logo: "no"
   maxclients: 64
 
 sysctl:
