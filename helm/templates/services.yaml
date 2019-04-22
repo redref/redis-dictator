@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: blablacar.com/v1
+    kind: MasterService
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+        app: {{ .Chart.Name }}
+        chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        component: database
+    spec:
+      serviceSpec:
+        type: {{ .Values.service.type }}
+        ports:
+          - port: {{ .Values.service.port }}
+            targetPort: redis
+            protocol: TCP
+            name: redis
+        selector:
+          app: {{ .Chart.Name }}
+          release: {{ .Release.Name }}
+      callback:
+        port: 8000

@@ -1,0 +1,12 @@
+{
+  "svc_name": "redis-test",
+  "log_level": "INFO",
+  "http_port": 8000,
+  "node": {
+    "name" : "localhost",
+    "host" : "127.0.0.1",
+    "port" : 6379,
+    "loading_timeout" : 30
+  },
+  "master_service": "redis-test"
+}

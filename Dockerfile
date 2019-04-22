@@ -1,13 +1,17 @@
 FROM golang:1.11-alpine as builder
 
-WORKDIR $GOPATH/src/github.com/blablacar/redis-dictator
+ARG VERSION
+ARG BUILD_DATE
+ARG GIT_REVISION
+WORKDIR $GOPATH/src/github.com/Junonogis/redis-dictator
 COPY . ./
 RUN \
-  go build ./... && \
+  go build -ldflags "-X main.BuildTime=${BUILD_DATE} -X main.Version=${VERSION} -X main.GitRevision=${GIT_REVISION}" ./... && \
   mv dictator /
 
 FROM alpine
 
 COPY --from=builder /dictator /
+COPY example/dictator.json /etc/dictator
 
 CMD ["/dictator", "--config", "/etc/dictator/dictator.json"]

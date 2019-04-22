@@ -1,0 +1,78 @@
+# Default values for cassandra
+# This is a YAML-formatted file.
+
+replicaCount: 3
+
+image:
+  repository: redis
+  tag: "5.0.4"
+  pullPolicy: Always
+
+dictator:
+  image: "junonogis/redis-dictator"
+  imageTag: "latest"
+  imagePullPolicy: "Always"
+  port: 8000
+  loading_timeout: 30
+  resources:
+    limits:
+      cpu: 50m
+      memory: 32Mi
+    requests:
+      cpu: 25m
+      memory: 16Mi
+
+service:
+  type: ClusterIP
+  port: 6379
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+persistence:
+  enabled: false
+  # storageClass:
+  # accessMode: ReadWriteOnce
+  # size: 10Gi
+
+config:
+  maxmemory: 64MB
+  tcp-backlog: 511
+  loglevel: info
+  always-show-logo: no
+  maxclients: 64
+
+sysctl:
+  image: busybox:1.30
+  pullPolicy: Always
+  params:
+    "net.core.somaxconn": 511
+
+exporter:
+  enabled: false
+  image: "oliver006/redis_exporter"
+  imageTag: "v0.33.0"
+  imagePullPolicy: "Always"
+  port: 9121
+  resources:
+    limits:
+      cpu: 50m
+      memory: 64Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi

@@ -1,0 +1,17 @@
+language: go
+# Recent docker version
+dist: xenial
+
+script:
+- gofmt -d src
+- docker build --build-arg VERSION=$(git describe --tags) --build-arg GIT_REVISION=$(git rev-parse HEAD) --build-arg BUILD_DATE=$(date -u '+%Y-%m-%d.%H:%M:%S.UTC') -t junonogis/redis-dictator:$(git describe --tags) .
+
+after_success:
+# Push
+- |
+  if [ $TRAVIS_PULL_REQUEST == false ] && [ $TRAVIS_BRANCH == "master" ]; then
+    echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+    docker tag junonogis/redis-dictator:$(git describe --tags) junonogis/redis-dictator:latest
+    docker push junonogis/redis-dictator:latest
+    docker push junonogis/redis-dictator:$(git describe --tags)
+  fi

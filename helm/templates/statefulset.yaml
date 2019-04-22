@@ -1,0 +1,163 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet 
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Chart.Name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: database
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  serviceName: {{ .Release.Name }}
+  updateStrategy:
+    type: RollingUpdate
+  #
+  # Pod Spec
+  #
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+      annotations:
+        {{- if .Values.exporter.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.exporter.port | quote }}
+        {{- end }}
+        checksum/config: {{ include (print .Template.BasePath "/configmap.yaml") $ | sha256sum }}
+    spec:
+      initContainers:
+      - name: init-sysctl
+        image: {{ .Values.sysctl.image }}
+        imagePullPolicy: {{ .Values.sysctl.pullPolicy }}
+        command:
+        - sh
+        - "-c"
+        - |
+          {{ range $key, $value := .Values.sysctl.params -}}
+          sysctl {{ $key }}={{ $value }}
+          {{ end }}
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      containers:
+        - name: redis
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["redis-server", "/config/redis.conf"]
+          ports:
+            - containerPort: 6379
+              name: redis
+          livenessProbe:
+            exec:
+              command:
+              - /tmp/probes/liveness-probe.sh
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - /tmp/probes/readiness-probe.sh
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          volumeMounts:
+          {{ if .Values.persistence.enabled -}}
+          - name: data
+            mountPath: /data
+            readOnly: false
+          {{ end -}}
+          - name: probes
+            mountPath: /tmp/probes
+          - name: redis-config
+            mountPath: /config
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+        - name: dictator
+          image: "{{ .Values.dictator.image }}:{{ .Values.dictator.imageTag }}"
+          imagePullPolicy: {{ .Values.dictator.imagePullPolicy }}
+          ports:
+          - containerPort: {{ .Values.dictator.port }}
+            name: dictator
+          volumeMounts:
+          - name: redis-config
+            mountPath: /etc/dictator
+          resources:
+{{ toYaml .Values.dictator.resources | indent 12 }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.dictator.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.dictator.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+        {{- if .Values.exporter.enabled }}
+        - name: exporter
+          image: "{{ .Values.exporter.image }}:{{ .Values.exporter.imageTag }}"
+          imagePullPolicy: {{ .Values.exporter.imagePullPolicy }}
+          ports:
+          - containerPort: {{ .Values.exporter.port }}
+            name: prometheus
+          resources:
+{{ toYaml .Values.exporter.resources | indent 12 }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.exporter.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.exporter.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+        {{- end }}
+      volumes:
+      - name: probes
+        configMap:
+          name: {{ .Release.Name }}-probes
+          defaultMode: 0555
+      - name: redis-config
+        configMap:
+          name: {{ .Release.Name }}-redis
+          defaultMode: 0555
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+
+  {{ if .Values.persistence.enabled }}
+  #
+  # Volume Spec
+  #
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - {{ .Values.persistence.accessMode | quote }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size | quote }}
+      storageClassName: {{ .Values.persistence.storageClass | quote }}
+  {{ end }}
