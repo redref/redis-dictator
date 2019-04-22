@@ -12,6 +12,6 @@ RUN \
 FROM alpine
 
 COPY --from=builder /dictator /
-COPY example/dictator.json /etc/dictator
+COPY example/dictator.json /etc/dictator/dictator.json
 
 CMD ["/dictator", "--config", "/etc/dictator/dictator.json"]
